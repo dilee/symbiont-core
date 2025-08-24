@@ -376,3 +376,20 @@ debug_config.py
 # Claude Code AI assistant files
 .claude/
 CLAUDE.md
+
+# LaTeX auxiliary files
+*.aux
+*.log
+*.out
+*.bbl
+*.blg
+*.toc
+*.lof
+*.lot
+*.fls
+*.fdb_latexmk
+*.synctex.gz
+*.nav
+*.snm
+*.vrb
+*.tex
