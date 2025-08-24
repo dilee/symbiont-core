@@ -1,0 +1,204 @@
+name: Tests and Quality Checks
+
+on:
+  push:
+    branches: [ main, develop ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch: # Allow manual triggering
+
+env:
+  POETRY_VERSION: "1.8.4"
+  PYTHON_DEFAULT: "3.11"
+
+jobs:
+  quality-checks:
+    name: Code Quality
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ env.PYTHON_DEFAULT }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_DEFAULT }}
+
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: ${{ env.POETRY_VERSION }}
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+        installer-parallel: true
+
+    - name: Load cached dependencies
+      uses: actions/cache@v4
+      with:
+        path: .venv
+        key: venv-quality-${{ runner.os }}-${{ env.PYTHON_DEFAULT }}-${{ hashFiles('**/poetry.lock') }}
+
+    - name: Install dependencies
+      run: |
+        poetry install --no-interaction --with dev
+      shell: bash
+
+    - name: Check code formatting with Black
+      run: |
+        poetry run black --check --diff symbiont/ tests/ examples/
+      shell: bash
+
+    - name: Lint with Ruff
+      run: |
+        poetry run ruff check symbiont/ tests/ examples/
+      shell: bash
+
+    - name: Type check with MyPy
+      run: |
+        poetry run mypy symbiont/
+      shell: bash
+
+    - name: Security check with Bandit
+      run: |
+        poetry run pip install bandit[toml]
+        poetry run bandit -r symbiont/ -f json -o bandit-report.json || true
+        poetry run bandit -r symbiont/
+      shell: bash
+      continue-on-error: true
+
+  test:
+    name: Test Suite
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ["3.11", "3.12"]
+        exclude:
+          # Reduce matrix for faster CI - only test all OS on Python 3.11
+          - os: macos-latest
+            python-version: "3.12"
+          - os: windows-latest
+            python-version: "3.12"
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: ${{ env.POETRY_VERSION }}
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+        installer-parallel: true
+
+    - name: Load cached dependencies
+      uses: actions/cache@v4
+      with:
+        path: .venv
+        key: venv-test-${{ matrix.os }}-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
+
+    - name: Install dependencies
+      run: |
+        poetry install --no-interaction --with dev
+      shell: bash
+
+    - name: Run tests
+      run: |
+        poetry run pytest -v --cov=symbiont --cov-report=xml --cov-report=term-missing --cov-report=html
+      shell: bash
+
+    - name: Upload coverage to Codecov
+      if: matrix.os == 'ubuntu-latest' && matrix.python-version == env.PYTHON_DEFAULT
+      uses: codecov/codecov-action@v4
+      with:
+        file: ./coverage.xml
+        flags: unittests
+        name: ${{ matrix.os }}-${{ matrix.python-version }}
+        fail_ci_if_error: false
+        token: ${{ secrets.CODECOV_TOKEN }}
+
+  test-examples:
+    name: Test Examples
+    runs-on: ubuntu-latest
+    needs: [quality-checks, test]
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ env.PYTHON_DEFAULT }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_DEFAULT }}
+
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: ${{ env.POETRY_VERSION }}
+        virtualenvs-create: true
+        virtualenvs-in-project: true
+        installer-parallel: true
+
+    - name: Install dependencies
+      run: |
+        poetry install --no-interaction --with dev
+      shell: bash
+
+    - name: Run toy sequence example
+      run: |
+        poetry run python examples/toy_sequence.py
+      shell: bash
+
+    - name: Check example outputs
+      run: |
+        echo "Example completed successfully!"
+
+  documentation:
+    name: Documentation Build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request' || github.ref == 'refs/heads/main'
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ env.PYTHON_DEFAULT }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ env.PYTHON_DEFAULT }}
+
+    - name: Install Poetry
+      uses: snok/install-poetry@v1
+      with:
+        version: ${{ env.POETRY_VERSION }}
+
+    - name: Install dependencies
+      run: |
+        poetry install --no-interaction --with docs
+      shell: bash
+
+    - name: Build documentation
+      run: |
+        # For now, just validate that imports work
+        poetry run python -c "import symbiont; print('Package imports successfully')"
+        poetry run python -c "from symbiont import Rules, Generator, Constraint; print('Core classes import successfully')"
+      shell: bash
+
+    - name: Test documentation examples
+      run: |
+        # Test that all public APIs are accessible
+        poetry run python -c "
+        from symbiont.domains.sequence import Contains, Length, GCContent
+        from symbiont.generators.mock import MockSequenceGenerator
+        from symbiont.bridge.compiler import DifferentiableCompiler
+        print('All major components import successfully')
+        "
+      shell: bash

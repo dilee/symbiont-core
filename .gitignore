@@ -1,0 +1,378 @@
+# Byte-compiled / optimized / DLL files
+__pycache__/
+*.py[codz]
+*$py.class
+
+# C extensions
+*.so
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# PyInstaller
+#  PyInstaller generated files
+*.manifest
+*.spec
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.nox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+*.py.cover
+.hypothesis/
+.pytest_cache/
+cover/
+
+# Translations
+*.mo
+*.pot
+
+# Django stuff:
+*.log
+local_settings.py
+db.sqlite3
+db.sqlite3-journal
+
+# Flask stuff:
+instance/
+.webassets-cache
+
+# Scrapy stuff:
+.scrapy
+
+# Sphinx documentation
+docs/_build/
+
+# PyBuilder
+.pybuilder/
+target/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# IPython
+profile_default/
+ipython_config.py
+
+# pyenv
+#   For a library or package, you might want to ignore these files since the code is
+#   intended to run in multiple environments; otherwise, check them in:
+# .python-version
+
+# pipenv
+#   Generally recommended to include in version control for reproducibility.
+#Pipfile.lock
+
+# UV
+#   Generally recommended to include for reproducibility.
+#uv.lock
+
+# poetry
+#   Generally recommended to include for reproducibility.
+#poetry.lock
+#poetry.toml
+
+# pdm
+#   Generally recommended to include for reproducibility.
+#pdm.lock
+#pdm.toml
+.pdm-python
+.pdm-build/
+
+# pixi
+#   Generally recommended to include for reproducibility.
+#pixi.lock
+.pixi
+
+# PEP 582; used by e.g. github.com/David-OConnor/pyflow and github.com/pdm-project/pdm
+__pypackages__/
+
+# Celery stuff
+celerybeat-schedule
+celerybeat.pid
+
+# SageMath parsed files
+*.sage.py
+
+# Environments
+.env
+.envrc
+.venv
+env/
+venv/
+ENV/
+env.bak/
+venv.bak/
+
+# Spyder project settings
+.spyderproject
+.spyproject
+
+# Rope project settings
+.ropeproject
+
+# mkdocs documentation
+/site
+
+# mypy
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyre type checker
+.pyre/
+
+# pytype static type analyzer
+.pytype/
+
+# Cython debug symbols
+cython_debug/
+
+# PyCharm
+#  JetBrains IDE files
+#.idea/
+
+# Abstra
+.abstra/
+
+# Visual Studio Code
+#  Visual Studio Code files
+# .vscode/
+
+# Ruff stuff:
+.ruff_cache/
+
+# PyPI configuration file
+.pypirc
+
+# Cursor
+.cursorignore
+.cursorindexingignore
+
+# Marimo
+marimo/_static/
+marimo/_lsp/
+__marimo__/
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon
+._*
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# Windows
+Thumbs.db
+Thumbs.db:encryptable
+ehthumbs.db
+ehthumbs_vista.db
+*.stackdump
+[Dd]esktop.ini
+$RECYCLE.BIN/
+*.cab
+*.msi
+*.msix
+*.msm
+*.msp
+*.lnk
+
+# Linux
+*~
+.fuse_hidden*
+.directory
+.Trash-*
+.nfs*
+
+# Symbiont-specific
+# Model checkpoints and outputs
+checkpoints/
+outputs/
+results/
+models/
+saved_models/
+*.ckpt
+*.pth
+*.pt
+*.h5
+*.pkl
+*.pickle
+
+# Generated sequences and constraint analysis
+generated_sequences/
+constraint_analysis/
+evaluation_results/
+sequence_outputs/
+
+# Data files (if large datasets are used)
+data/raw/
+data/processed/
+data/external/
+*.csv
+*.tsv
+*.parquet
+*.h5
+*.hdf5
+*.feather
+
+# Experiment logs and monitoring
+logs/
+wandb/
+mlruns/
+tensorboard/
+tb_logs/
+experiments/
+
+# Jupyter notebook outputs and checkpoints
+*.ipynb
+.ipynb_checkpoints/
+
+# Temporary experiment files
+tmp/
+temp/
+scratch/
+playground/
+sandbox/
+
+# IDE and editor files
+*.sublime-project
+*.sublime-workspace
+.vimrc
+.nvimrc
+*.swp
+*.swo
+.idea/
+.vscode/
+
+# Backup files
+*.bak
+*.backup
+*.old
+*.orig
+*.save
+
+# Archive files
+*.tar.gz
+*.zip
+*.rar
+*.7z
+
+# Documentation builds
+docs/build/
+docs/source/_build/
+_build/
+site/
+
+# Profiling
+*.prof
+*.lprof
+.prof/
+
+# Database files
+*.db
+*.sqlite
+*.sqlite3
+
+# Configuration files with secrets
+.env.local
+.env.production
+.env.development
+config/secrets.yaml
+secrets.yaml
+.secrets/
+
+# Generated documentation
+api_docs/
+auto_docs/
+generated_docs/
+
+# Testing artifacts
+test-results/
+test-reports/
+.coverage.*
+htmlcov/
+coverage.xml
+coverage.json
+.tox/
+.nox/
+
+# Static analysis and linting
+.bandit
+.security/
+pylint-report.txt
+flake8-report.txt
+
+# Virtual environments (additional patterns)
+.Python
+pyvenv.cfg
+
+# Generated constraint files
+*.constraint
+*.rules
+*.compiled_constraints
+
+# Symbiont example outputs
+examples/outputs/
+examples/results/
+examples/*.png
+examples/*.pdf
+examples/*.svg
+examples/*.html
+
+# Cached model files
+.cache/
+model_cache/
+huggingface_cache/
+
+# Performance benchmarks
+benchmarks/results/
+performance/
+timing_results/
+
+# Local development overrides
+local.py
+local_settings.py
+dev_config.py
+debug_config.py
+
+# Claude Code AI assistant files
+.claude/
+CLAUDE.md
