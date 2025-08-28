@@ -113,6 +113,7 @@ To get started with Symbiont, you will need Python 3.9+ and PyTorch.
 
 ```python
 from symbiont import Rules, MockSequenceGenerator
+from symbiont.utils import ProgressReporter
 
 # Define constraints using intuitive DSL
 rules = Rules()
@@ -127,6 +128,14 @@ sequence = generator.constrained_generate(
     rules.compile(),
     length=100
 )
+
+# Track progress during iterative refinement (NEW!)
+progress = ProgressReporter(rules.constraints, target_threshold=0.7)
+progress.initialize(sequences, max_iterations=20)
+for i in range(20):
+    sequences = refine_step(sequences)  # Your refinement logic
+    progress.update(sequences, iteration=i+1)
+summary = progress.finalize()
 ```
 
 ### **Constraint Compilation Process**
