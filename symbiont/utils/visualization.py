@@ -1,5 +1,8 @@
 """Visualization utilities for constraint satisfaction and generation results."""
 
+import sys
+import time
+from dataclasses import dataclass, field
 from typing import Any
 
 import numpy as np
@@ -16,6 +19,271 @@ except ImportError:
     HAS_MATPLOTLIB = False
 
 from symbiont.core.constraints import Constraint
+
+
+@dataclass
+class ConstraintProgress:
+    """Track progress for a single constraint."""
+
+    name: str
+    current_score: float = 0.0
+    initial_score: float = 0.0
+    best_score: float = 0.0
+    history: list[float] = field(default_factory=list)
+    target_threshold: float = 0.8
+
+    def update(self, score: float) -> None:
+        """Update progress with new score."""
+        self.current_score = score
+        self.history.append(score)
+        if score > self.best_score:
+            self.best_score = score
+
+    @property
+    def improvement(self) -> float:
+        """Calculate improvement from initial score."""
+        return self.current_score - self.initial_score
+
+    @property
+    def improvement_rate(self) -> float:
+        """Calculate rate of improvement over history."""
+        if len(self.history) < 2:
+            return 0.0
+        recent = self.history[-min(5, len(self.history)) :]
+        return (recent[-1] - recent[0]) / len(recent)
+
+
+class ProgressReporter:
+    """
+    Live progress reporter for constraint satisfaction during generation.
+
+    Shows real-time progress bars and statistics for each constraint
+    as the generator iteratively improves satisfaction scores.
+    """
+
+    def __init__(
+        self,
+        constraints: list[Constraint],
+        constraint_names: list[str] | None = None,
+        target_threshold: float = 0.8,
+        update_interval: float = 0.1,
+        show_eta: bool = True,
+        use_color: bool = True,
+    ):
+        """
+        Initialize progress reporter.
+
+        Args:
+            constraints: List of constraints to track
+            constraint_names: Optional names for constraints
+            target_threshold: Target satisfaction score
+            update_interval: Minimum time between updates (seconds)
+            show_eta: Whether to show estimated time remaining
+            use_color: Whether to use ANSI color codes
+        """
+        self.constraints = constraints
+        self.target_threshold = target_threshold
+        self.update_interval = update_interval
+        self.show_eta = show_eta
+        self.use_color = use_color and sys.stdout.isatty()
+
+        # Initialize constraint tracking
+        if constraint_names is None:
+            constraint_names = [f"Constraint_{i}" for i in range(len(constraints))]
+        self.progress_trackers = {
+            name: ConstraintProgress(name, target_threshold=target_threshold)
+            for name in constraint_names
+        }
+
+        # Timing
+        self.start_time = time.time()
+        self.last_update = 0.0
+        self.iteration = 0
+        self.max_iterations = 0
+
+    def initialize(self, sequences: torch.Tensor, max_iterations: int = 100) -> None:
+        """
+        Initialize progress tracking with initial scores.
+
+        Args:
+            sequences: Initial generated sequences
+            max_iterations: Maximum number of iterations
+        """
+        self.max_iterations = max_iterations
+        self.start_time = time.time()
+
+        # Calculate initial scores
+        for constraint, name in zip(
+            self.constraints, self.progress_trackers.keys(), strict=False
+        ):
+            score = constraint.satisfaction(sequences).mean().item()
+            tracker = self.progress_trackers[name]
+            tracker.initial_score = score
+            tracker.current_score = score
+            tracker.best_score = score
+            tracker.history = [score]
+
+        # Show initial state
+        self._render()
+
+    def update(self, sequences: torch.Tensor, iteration: int | None = None) -> None:
+        """
+        Update progress with new sequences.
+
+        Args:
+            sequences: Current generated sequences
+            iteration: Current iteration number
+        """
+        current_time = time.time()
+
+        # Rate limit updates
+        if current_time - self.last_update < self.update_interval:
+            return
+
+        if iteration is not None:
+            self.iteration = iteration
+        else:
+            self.iteration += 1
+
+        # Calculate new scores
+        for constraint, name in zip(
+            self.constraints, self.progress_trackers.keys(), strict=False
+        ):
+            score = constraint.satisfaction(sequences).mean().item()
+            self.progress_trackers[name].update(score)
+
+        self._render()
+        self.last_update = current_time
+
+    def _render(self) -> None:
+        """Render progress bars to terminal."""
+        # Clear previous output
+        if self.iteration > 0:
+            # Move cursor up by number of constraints + header lines
+            sys.stdout.write(f"\033[{len(self.constraints) + 4}A")
+
+        # Header
+        elapsed = time.time() - self.start_time
+        if self.max_iterations > 0:
+            progress_pct = (self.iteration / self.max_iterations) * 100
+            header = f"Iteration {self.iteration}/{self.max_iterations} ({progress_pct:.0f}%) | Elapsed: {elapsed:.1f}s"
+        else:
+            header = f"Iteration {self.iteration} | Elapsed: {elapsed:.1f}s"
+
+        if self.show_eta and self.max_iterations > 0 and self.iteration > 0:
+            eta = (elapsed / self.iteration) * (self.max_iterations - self.iteration)
+            header += f" | ETA: {eta:.1f}s"
+
+        print(header)
+        print("=" * 80)
+
+        # Progress bars for each constraint
+        for name, tracker in self.progress_trackers.items():
+            self._render_progress_bar(name, tracker)
+
+        # Overall statistics
+        mean_score = np.mean([t.current_score for t in self.progress_trackers.values()])
+        mean_improvement = np.mean(
+            [t.improvement for t in self.progress_trackers.values()]
+        )
+
+        print("=" * 80)
+        print(f"Overall: {mean_score:.3f} | Improvement: {mean_improvement:+.3f}")
+
+    def _render_progress_bar(self, name: str, tracker: ConstraintProgress) -> None:
+        """Render a single progress bar."""
+        bar_width = 40
+        filled = int(tracker.current_score * bar_width)
+        bar = "█" * filled + "░" * (bar_width - filled)
+
+        # Color based on satisfaction level
+        if self.use_color:
+            if tracker.current_score >= tracker.target_threshold:
+                color_code = "\033[92m"  # Green
+            elif tracker.current_score >= 0.5:
+                color_code = "\033[93m"  # Yellow
+            else:
+                color_code = "\033[91m"  # Red
+            reset_code = "\033[0m"
+        else:
+            color_code = ""
+            reset_code = ""
+
+        # Format status indicator
+        if tracker.current_score >= tracker.target_threshold:
+            status = "✓"
+        elif tracker.improvement_rate > 0.01:
+            status = "↑"
+        elif tracker.improvement_rate < -0.01:
+            status = "↓"
+        else:
+            status = "→"
+
+        # Build output line
+        line = f"{name:20} {color_code}{bar}{reset_code} "
+        line += f"{tracker.current_score:.3f} "
+        line += f"({tracker.improvement:+.3f}) "
+        line += status
+
+        print(line)
+
+    def finalize(self) -> dict[str, Any]:
+        """
+        Finalize progress reporting and return summary.
+
+        Returns:
+            Summary dictionary with final statistics
+        """
+        total_time = time.time() - self.start_time
+
+        print("\n" + "=" * 80)
+        print("FINAL RESULTS")
+        print("=" * 80)
+
+        summary: dict[str, Any] = {
+            "total_time": total_time,
+            "iterations": self.iteration,
+            "constraints": {},
+        }
+
+        for name, tracker in self.progress_trackers.items():
+            final_score = tracker.current_score
+            improvement = tracker.improvement
+            success = final_score >= tracker.target_threshold
+
+            summary["constraints"][name] = {
+                "final_score": final_score,
+                "initial_score": tracker.initial_score,
+                "best_score": tracker.best_score,
+                "improvement": improvement,
+                "success": success,
+                "history": tracker.history,
+            }
+
+            status = "✅ SUCCESS" if success else "❌ FAILED"
+            print(f"{name:20} {final_score:.3f} ({improvement:+.3f}) {status}")
+
+        # Overall summary
+        mean_score = np.mean([t.current_score for t in self.progress_trackers.values()])
+        success_rate = np.mean(
+            [
+                t.current_score >= t.target_threshold
+                for t in self.progress_trackers.values()
+            ]
+        )
+
+        summary["mean_score"] = mean_score
+        summary["success_rate"] = success_rate
+
+        print("=" * 80)
+        print(f"Mean Score: {mean_score:.3f}")
+        print(f"Success Rate: {success_rate:.1%}")
+        print(f"Total Time: {total_time:.2f}s")
+
+        if self.iteration > 0:
+            print(f"Time per Iteration: {total_time/self.iteration:.3f}s")
+
+        return summary
 
 
 def plot_satisfaction(
