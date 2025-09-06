@@ -138,6 +138,42 @@ for i in range(20):
 summary = progress.finalize()
 ```
 
+### **Template Library (NEW!)**
+
+Symbiont now includes a comprehensive template library for common molecular biology applications:
+
+```python
+from symbiont.templates import PrimerDesignTemplate, CRISPRGuideTemplate
+
+# PCR primer design with best practices built-in
+primer_template = PrimerDesignTemplate(
+    target_length=(18, 25),
+    gc_content=(0.4, 0.6),
+    avoid_hairpins=True
+)
+rules = primer_template.build()
+
+# CRISPR guide RNA design
+crispr_template = CRISPRGuideTemplate(
+    pam_type="NGG",  # SpCas9
+    length=20
+)
+rules = crispr_template.build()
+
+# Discover available templates
+from symbiont import registry
+print(registry.search(domain="molecular_biology"))
+```
+
+**Available Templates:**
+- **PrimerDesignTemplate**: PCR primer design with Tm, GC content, and hairpin constraints
+- **CRISPRGuideTemplate**: Guide RNA design for Cas9/Cas12a systems
+- **CodonOptimizedTemplate**: Codon optimization for different host organisms
+- **PromoterTemplate**: Bacterial and mammalian promoter design
+- **CompositeTemplate**: Combine multiple templates for complex applications
+
+Run `make template-demo` to see all templates in action!
+
 ### **Constraint Compilation Process**
 
 ```mermaid

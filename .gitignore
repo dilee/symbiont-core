@@ -375,7 +375,6 @@ debug_config.py
 
 # Claude Code AI assistant files
 .claude/
-CLAUDE.md
 
 # LaTeX auxiliary files
 *.aux

@@ -16,9 +16,28 @@ from symbiont.core.dsl import Rules
 from symbiont.core.types import GenerationConfig
 from symbiont.generators.base import Generator
 
+# Template system exports
+from symbiont.templates import (
+    CodonOptimizedTemplate,
+    ConstraintTemplate,
+    CRISPRGuideTemplate,
+    PrimerDesignTemplate,
+    PromoterTemplate,
+    TemplateRegistry,
+    registry,
+)
+
 __all__ = [
     "Constraint",
     "Rules",
     "GenerationConfig",
     "Generator",
+    # Templates
+    "ConstraintTemplate",
+    "PrimerDesignTemplate",
+    "CRISPRGuideTemplate",
+    "CodonOptimizedTemplate",
+    "PromoterTemplate",
+    "TemplateRegistry",
+    "registry",
 ]

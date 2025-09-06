@@ -15,6 +15,7 @@ help:
 	@echo "  quality-check Run all quality checks"
 	@echo "  all-checks    Run all checks including tests"
 	@echo "  example       Run toy sequence example"
+	@echo "  template-demo Run template system demo"
 	@echo "  clean         Clean build artifacts"
 	@echo "  docs          Build documentation"
 	@echo "  pre-commit    Run pre-commit on all files"
@@ -78,6 +79,9 @@ security:
 # Examples and documentation
 example:
 	poetry run python examples/toy_sequence.py
+
+template-demo:
+	poetry run python examples/template_demo.py
 
 docs:
 	@echo "Building documentation..."
